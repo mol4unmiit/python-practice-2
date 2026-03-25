@@ -14,12 +14,24 @@ models = list(next(iter(laptops_by_char.values())).keys())
 char_names = list(laptops_by_char.keys())
 data_matrix = [[laptops_by_char[char][model] for char in char_names] for model in models]
 
+
 def get_normal(matrix):
     base_row = matrix[0]
-    return [[v / b for v, b in zip(row, base_row)] for row in matrix]
+    normalized = []
+    for i, row in enumerate(matrix):
+        norm_row = []
+        for j, val in enumerate(row):
+            if char_names[j] == "Вес (кг)":
+                norm_row.append(base_row[j] / val)
+            else:
+                norm_row.append(val / base_row[j])
+        normalized.append(norm_row)
+    return normalized
+
 
 def get_quality(normalized_matrix):
     return [round(sum(row) / len(row), 2) for row in normalized_matrix]
+
 
 def create_bar(names, values):
     plt.figure(figsize=(10, 6))
@@ -36,17 +48,22 @@ def create_radial(models_list, labels, normalized_matrix):
     count = len(labels)
     angles = np.linspace(0, 2 * np.pi, count, endpoint=False).tolist()
     angles += angles[:1]
+    max_val = max(max(row) for row in normalized_matrix)
+    step = 0.25
+    ylim_max = np.ceil(max_val / step) * step + step
+
     fig, ax = plt.subplots(figsize=(10, 10), subplot_kw=dict(projection="polar"))
     for i, data_row in enumerate(closed_data):
         ax.plot(angles, data_row, "o-", linewidth=2, label=models_list[i])
         ax.fill(angles, data_row, alpha=0.25)
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(labels, fontsize=10)
-    ax.set_ylim(0, 2)
+    ax.set_ylim(0, ylim_max)
     ax.legend(loc="upper right", bbox_to_anchor=(1.3, 1.0))
     plt.title("Сравнение относительных характеристик", pad=20)
     plt.tight_layout()
     plt.show()
+
 
 if __name__ == "__main__":
     normalized_data = get_normal(data_matrix)
